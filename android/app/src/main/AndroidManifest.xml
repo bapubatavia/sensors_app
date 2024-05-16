@@ -10,6 +10,11 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="true"/>
+    <uses-feature android:name="android.hardware.SensorManager"/>
+    <uses-feature android:name="android.hardware.Sensor"/>
+    <uses-feature android:name="android.hardware.SensorEvent"/>
+    <uses-feature android:name="android.hardware.SensorEventListener"/>
     <application
         android:label="sensors_app"
         android:name="${applicationName}"

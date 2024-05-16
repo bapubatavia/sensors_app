@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sensors_app/pages/Compass.dart';
+// import 'package:sensors_app/pages/Compass.dart';
 import 'package:sensors_app/pages/google_maps.dart';
-import 'package:sensors_app/pages/step_counter.dart';
+import 'package:sensors_app/pages/motion_chart.dart';
+import 'package:sensors_app/pages/smart_lights.dart';
+// import 'package:sensors_app/pages/step_counter.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -13,9 +15,17 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
 
   
+  @override
+  void initState() {
+    super.initState();
+  }
+
+    
+
+
   int selectedTab = 0;
 
-  final List<String> tabTitles = ['Steps', 'Compass', 'Current Location'];
+  final List<String> tabTitles = ['Motion Sensor','Current Location', 'Smart Lights'];
 
   @override
   Widget build(BuildContext context) {
@@ -63,23 +73,26 @@ class _MainPageState extends State<MainPage> {
             });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.directions_walk), label: 'Steps'),
-          BottomNavigationBarItem(icon: Icon(Icons.compass_calibration), label: 'Compass'),
+          BottomNavigationBarItem(icon: Icon(Icons.directions_walk), label: 'Motion Sensor'),
+          // BottomNavigationBarItem(icon: Icon(Icons.compass_calibration), label: 'Compass'),
           BottomNavigationBarItem(icon: Icon(Icons.location_searching), label: 'Current Location'),
+          BottomNavigationBarItem(icon: Icon(Icons.light), label: 'Smart Lights'),
         ],
       ),
     );
   }
 
-  List<Icon> icons = [const Icon(Icons.directions_walk), const Icon(Icons.compass_calibration), const Icon(Icons.location_searching)];
+  List<Icon> icons = [const Icon(Icons.directions_walk), const Icon(Icons.location_searching), const Icon(Icons.light)];
   Widget _buildBody(int index) {
     switch (index) {
       case 0:
-        return const StepsCounter();
+        return const MotionChart();
+      // case 0:
+      //   return const MyCompass();
       case 1:
-        return const MyCompass();
-      case 2:
         return const MyCurrentLocation(); 
+      case 2:
+        return const SmartLights();
       default:
         return Container();
     }

@@ -1,7 +1,11 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
+import 'package:pedometer/pedometer.dart';
 import 'dart:async';
 
-import 'package:sensors_plus/sensors_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 
 class StepsCounter extends StatefulWidget {
   const StepsCounter({super.key});
@@ -11,41 +15,97 @@ class StepsCounter extends StatefulWidget {
 }
 
 class _StepsCounterState extends State<StepsCounter> {
-  int stepCount = 0;
-  late StreamSubscription<AccelerometerEvent> _accelerometerSubscription;
+  late Stream<StepCount> _stepCountStream;
+  late Stream<PedestrianStatus> _pedestrianStatusStream;
+  String _status = '?', _steps = '?';
+
+  late StreamSubscription<StepCount> _stepCountSubscription;
+  late StreamSubscription<PedestrianStatus> _pedestrianStatusSubscription;
 
 
   @override
   void initState() {
     super.initState();
     initPlatformState();
+    checkPermissions();
   }
 
-  void detectSteps(AccelerometerEvent event) {
-    double magnitude = event.x.abs() + event.y.abs() + event.z.abs();
-    if (magnitude > 20) {
-      setState(() {
-        stepCount++;
-      });
-    }
+
+Future<void> checkPermissions() async {
+  final permissionStatus = await Permission.activityRecognition.status;
+  switch (permissionStatus) {
+    case PermissionStatus.granted:
+      print('Permission granted for activity recognition');
+      break;
+    case PermissionStatus.denied:
+      print('Permission denied for activity recognition');
+      await Permission.activityRecognition.request();
+      break;
+    case PermissionStatus.restricted:
+      print('Permission restricted for activity recognition');
+      openAppSettings();
+      break;
+    case PermissionStatus.permanentlyDenied:
+      print('Permission permanently denied for activity recognition');
+      openAppSettings();
+      break;
+    default:
+      print('Unknown permission status');
+  }
+}
+
+  
+
+  void onStepCount(StepCount event) {
+    print(event);
+    setState(() {
+      _steps = event.steps.toString();
+    });
   }
 
+  void onPedestrianStatusChanged(PedestrianStatus event) {
+    print(event);
+    setState(() {
+      _status = event.status;
+    });
+  }
+
+  void onPedestrianStatusError(error) {
+    print('onPedestrianStatusError: $error');
+    setState(() {
+      _status = 'Pedestrian Status not available';
+    });
+    print(_status);
+  }
+
+  void onStepCountError(error) {
+    print('onStepCountError: $error');
+    setState(() {
+      _steps = 'Step Count not available';
+    });
+  }
 
   void initPlatformState() {
-    _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
-      detectSteps(event);
-      },
-      onError: (dynamic error) {
-        print('Error accessing accelerometer data: $error');
-      },
-    );
+    _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
+    _pedestrianStatusSubscription = _pedestrianStatusStream
+        .listen(onPedestrianStatusChanged);
+    _pedestrianStatusSubscription.onError(onPedestrianStatusError);
+
+    _stepCountStream = Pedometer.stepCountStream;
+    _stepCountSubscription = _stepCountStream.listen(onStepCount);
+    _stepCountSubscription.onError(onStepCountError);
+
+    if (!mounted) return;
   }
 
   @override
   void dispose() {
-    _accelerometerSubscription.cancel();
+    // Cancel the subscriptions
+    _stepCountSubscription.cancel();
+    _pedestrianStatusSubscription.cancel();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -56,15 +116,40 @@ class _StepsCounterState extends State<StepsCounter> {
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            children: <Widget>[
               const Text(
                 'Step Count:',
                 style: TextStyle(fontSize: 20),
               ),
               Text(
-                '$stepCount',
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                _steps,
+                style: const TextStyle(fontSize: 60, fontWeight: FontWeight.bold),
               ),
+            const Divider(
+                height: 100,
+                thickness: 0,
+                color: Colors.white,
+              ),
+              const Text(
+                'Pedestrian Status',
+                style: TextStyle(fontSize: 30),
+              ),
+              Icon(
+                _status == 'walking'
+                    ? Icons.directions_walk
+                    : _status == 'stopped'
+                        ? Icons.accessibility_new
+                        : Icons.error,
+                size: 100,
+              ),
+              Center(
+                child: Text(
+                  _status,
+                  style: _status == 'walking' || _status == 'stopped'
+                      ? const TextStyle(fontSize: 30)
+                      : const TextStyle(fontSize: 20, color: Colors.red),
+                ),
+              )
             ],
           ),
         ),
